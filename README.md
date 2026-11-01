@@ -4,7 +4,7 @@ Event check-in, live polling and an AI assistant for **LaunchPad Summit 2026**, 
 
 Ushers check guests in at the door, checked-in attendees vote in live polls, organizers watch attendance and results update in real time, and a Gemini-powered assistant answers questions about the agenda, venue and polls.
 
-> **Status:** in active development. Check-in, voting and the organizer dashboard are done; the remaining screens are being built stage by stage. See [Project status](#project-status).
+> **Status:** in active development. Check-in, voting, the organizer dashboard and the AI assistant are done; the remaining screens are being built stage by stage. See [Project status](#project-status).
 
 ## Tech stack
 
@@ -13,7 +13,7 @@ Ushers check guests in at the door, checked-in attendees vote in live polls, org
 | Framework | [Next.js](https://nextjs.org) 16 (App Router, Cache Components) + React 19 | Server and UI code in one TypeScript project, deploys directly to Vercel |
 | Styling | Tailwind CSS 4 | Design tokens in `globals.css`; charts are plain CSS bars, no chart library |
 | Database | SQLite via [`@libsql/client`](https://github.com/tursodatabase/libsql-client-ts) | A local file in development; a hosted [Turso](https://turso.tech) database in production, with identical SQL |
-| AI | Google Gemini | Event assistant (planned, Stage 7) |
+| AI | Google Gemini (REST API via `fetch`, no SDK) | Event assistant grounded in live event data; defaults to `gemini-3.5-flash-lite`, Google's recommended fast, low-cost model |
 | Language | TypeScript (strict) | |
 
 ## Getting started
@@ -45,7 +45,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | For the AI assistant | Google Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) |
-| `GEMINI_MODEL` | No | Gemini model name (`.env.example` uses `gemini-2.5-flash`) |
+| `GEMINI_MODEL` | No | Gemini model id. Defaults to `gemini-3.5-flash-lite` |
 | `STAFF_PIN` | For staff pages | Shared PIN protecting the usher and organizer pages. If empty, nobody can log in as staff. Use 6+ digits |
 | `TURSO_DATABASE_URL` | In production | Hosted Turso database URL. Leave empty locally to use `launchpad.db` |
 | `TURSO_AUTH_TOKEN` | In production | Auth token for the Turso database |
@@ -73,7 +73,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | Usher check-in | `/usher` | Staff | Live attendance numbers; search guests by name, organization or check-in code and check them in with one tap. Refreshes every 5 seconds so several ushers stay in sync |
 | Live polls | `/attendee` | Attendees | Enter a check-in code (remembered on the device) to vote. Results appear after voting and update every 5 seconds |
 | Organizer dashboard | `/organizer` | Staff | Live attendance, voter participation, full results for every poll (including hidden ones) and the latest arrivals, refreshed every 5 seconds. Each poll can be opened/closed and its results shown to or hidden from attendees |
-| AI assistant | `/assistant` | Everyone | Ask questions about the event, agenda and polls |
+| AI assistant | `/assistant` | Everyone | Chat with a Gemini-powered assistant about the agenda, venue, food, Wi-Fi and live poll results. Suggested questions to start; Enter to send |
 
 ### Staff access
 
@@ -94,10 +94,20 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 | `POST` | `/api/usher/checkin` | Staff | `{ guestId }` → `checked_in` or `already_checked_in` |
 | `GET` | `/api/organizer/overview` | Staff | Attendance, voter count, all poll results and the 10 latest check-ins |
 | `PATCH` | `/api/organizer/polls/:id` | Staff | `{ status?, showResults? }` → open/close a poll or show/hide its results |
+| `POST` | `/api/assistant` | Public, rate-limited | `{ messages }` → `{ reply }` from Gemini |
 | `POST` | `/api/attendee/polls` | Check-in code | `{ code }` → first name, check-in status and polls as that guest may see them |
 | `POST` | `/api/attendee/vote` | Check-in code | `{ code, pollId, optionId }` → `voted`, or an error saying why not |
 
 Attendee routes use `POST` so the check-in code (the attendee's only credential) stays out of URLs and server logs. Unknown codes get a short delay to slow down guessing.
+
+### AI assistant
+
+`/api/assistant` builds a system prompt (`src/lib/assistantPrompt.ts`) from the event details in `src/data/event.ts` plus **live** attendance and poll results, fetched on every question, and sends it to Gemini (`src/lib/gemini.ts`).
+
+- **Grounded:** told to answer only from that information, to stay on topic, and to say when it doesn't know.
+- **Private:** no guest names, emails or codes are sent to Gemini, and polls with hidden results are described as "not yet announced", so the chatbot can't reveal results early.
+- **Cost-limited:** questions are capped at 500 characters, only the last 10 messages are sent, replies are capped in length, and each visitor can ask 20 questions per 5 minutes. The rate limit is held in memory per server instance, so on Vercel it is a best-effort brake rather than a strict limit.
+- **Fails gracefully:** a missing key, invalid key, Gemini rate limit, blocked prompt or timeout each show attendees a short, friendly message; technical details are only logged on the server.
 
 ### Rules the app enforces
 
@@ -123,8 +133,11 @@ src/
     ui/                Reusable UI: Button, Card, Input, Badge, StatCard, ProgressBar, …
   data/                Event details, seed guests and seed polls
   lib/
+    assistantPrompt.ts Builds the Gemini system prompt from event and live data
     attendee.ts        Builds the poll list each attendee is allowed to see
     auth/              Staff PIN tokens and the requireStaff() check
+    gemini.ts          Gemini REST client
+    rateLimit.ts       In-memory per-visitor rate limiter
     db/client.ts       Shared database connection (local file or Turso)
     db/schema.ts       Table definitions
     db/queries.ts      All SQL used by the app
@@ -150,8 +163,8 @@ src/
 | 4 | Usher check-in dashboard and staff PIN protection | ✅ Done |
 | 5 | Attendee voting | ✅ Done |
 | 6 | Organizer live dashboard with poll controls | ✅ Done |
-| 7 | Gemini AI assistant | ⏳ Next |
-| 8–10 | Polish, testing and Vercel deployment | Planned |
+| 7 | Gemini AI assistant | ✅ Done |
+| 8–10 | Polish, testing and Vercel deployment | ⏳ Next |
 
 ## Deployment (planned)
 
