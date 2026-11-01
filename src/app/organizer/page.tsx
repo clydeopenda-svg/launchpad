@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, EmptyState } from "@/components/ui";
+import { LogoutButton } from "@/components/staff/LogoutButton";
+import { OrganizerDashboard } from "./OrganizerDashboard";
 
 export const metadata: Metadata = { title: "Organizer dashboard" };
 
+// Access is enforced by src/proxy.ts; data comes from the staff-only
+// /api/organizer routes in the browser.
 export default function OrganizerPage() {
   return (
     <>
-      <PageHeader title="Organizer dashboard" description="Live attendance and poll results." />
-      <Card>
-        <EmptyState title="Coming in Stage 6" message="This screen is being built next." />
-      </Card>
+      <PageHeader title="Organizer dashboard" description="Live attendance and poll results." action={<LogoutButton />} />
+      <OrganizerDashboard />
     </>
   );
 }

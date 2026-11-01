@@ -165,3 +165,44 @@ export async function castVote(code: string, pollId: number, optionId: number): 
     throw error;
   }
 }
+
+// ---------- Organizer ----------
+
+/** The most recent check-ins, newest first. */
+export async function getRecentCheckIns(limit = 10): Promise<Guest[]> {
+  const result = await getDb().execute({
+    sql: `SELECT * FROM guests WHERE checked_in_at IS NOT NULL
+          ORDER BY checked_in_at DESC LIMIT ?`,
+    args: [limit],
+  });
+  return result.rows.map(toGuest);
+}
+
+/**
+ * Opens/closes a poll and/or shows/hides its results to attendees.
+ * Returns false if the poll doesn't exist. Only the fields given are changed.
+ */
+export async function updatePoll(
+  id: number,
+  changes: { status?: Poll["status"]; showResults?: boolean },
+): Promise<boolean> {
+  const sets: string[] = [];
+  const args: (string | number)[] = [];
+  // Column names are fixed strings here, never user input; values still go
+  // through "?" placeholders.
+  if (changes.status !== undefined) {
+    sets.push("status = ?");
+    args.push(changes.status);
+  }
+  if (changes.showResults !== undefined) {
+    sets.push("show_results = ?");
+    args.push(changes.showResults ? 1 : 0);
+  }
+  if (sets.length === 0) return true;
+
+  const result = await getDb().execute({
+    sql: `UPDATE polls SET ${sets.join(", ")} WHERE id = ?`,
+    args: [...args, id],
+  });
+  return result.rowsAffected === 1;
+}

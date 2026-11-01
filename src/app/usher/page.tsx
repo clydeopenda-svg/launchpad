@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { LogoutButton } from "./LogoutButton";
+import { LogoutButton } from "@/components/staff/LogoutButton";
 import { UsherDashboard } from "./UsherDashboard";
 
 export const metadata: Metadata = { title: "Usher check-in" };

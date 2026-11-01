@@ -5,7 +5,7 @@ import { STAFF_COOKIE, isValidStaffToken } from "@/lib/auth/staff";
 // redirected to the PIN screen; API calls get a 401 instead, since a redirect
 // to an HTML page is useless to fetch().
 //
-// This is the first line of defence only — the usher API routes check the
+// This is the first line of defence only — the staff API routes check the
 // cookie again themselves (see requireStaff), so they stay protected even if
 // this matcher is changed.
 export async function proxy(request: NextRequest) {
@@ -24,5 +24,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/usher/:path*", "/organizer/:path*", "/api/usher/:path*"],
+  matcher: ["/usher/:path*", "/organizer/:path*", "/api/usher/:path*", "/api/organizer/:path*"],
 };
