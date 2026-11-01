@@ -30,6 +30,21 @@ export interface Poll {
   totalVotes: number;
 }
 
+/**
+ * A poll as one attendee sees it. Vote counts are only included when
+ * resultsVisible is true, so hidden results never reach the browser.
+ */
+export interface AttendeePoll {
+  id: number;
+  question: string;
+  status: PollStatus;
+  options: { id: number; label: string; votes?: number }[];
+  totalVotes?: number;
+  /** The option this attendee chose, or null if they haven't voted. */
+  myOptionId: number | null;
+  resultsVisible: boolean;
+}
+
 export interface AttendanceStats {
   totalGuests: number;
   checkedIn: number;

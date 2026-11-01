@@ -4,7 +4,7 @@ Event check-in, live polling and an AI assistant for **LaunchPad Summit 2026**, 
 
 Ushers check guests in at the door, checked-in attendees vote in live polls, organizers watch attendance and results update in real time, and a Gemini-powered assistant answers questions about the agenda, venue and polls.
 
-> **Status:** in active development. The foundation and the usher check-in dashboard are done; the remaining screens are being built stage by stage. See [Project status](#project-status).
+> **Status:** in active development. The foundation, usher check-in and attendee voting are done; the remaining screens are being built stage by stage. See [Project status](#project-status).
 
 ## Tech stack
 
@@ -71,7 +71,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | Home | `/` | Everyone | Event details and links to each section |
 | Staff login | `/staff/login` | Staff | Enter the staff PIN |
 | Usher check-in | `/usher` | Staff | Live attendance numbers; search guests by name, organization or check-in code and check them in with one tap. Refreshes every 5 seconds so several ushers stay in sync |
-| Live polls | `/attendee` | Attendees | Enter a check-in code to vote and see results |
+| Live polls | `/attendee` | Attendees | Enter a check-in code (remembered on the device) to vote. Results appear after voting and update every 5 seconds |
 | Organizer dashboard | `/organizer` | Staff | Live attendance and poll results |
 | AI assistant | `/assistant` | Everyone | Ask questions about the event, agenda and polls |
 
@@ -92,10 +92,15 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 | `POST` | `/api/staff/logout` | Public | Clears the staff cookie |
 | `GET` | `/api/usher/guests?q=` | Staff | Matching guests (up to 50) plus attendance stats |
 | `POST` | `/api/usher/checkin` | Staff | `{ guestId }` → `checked_in` or `already_checked_in` |
+| `POST` | `/api/attendee/polls` | Check-in code | `{ code }` → first name, check-in status and polls as that guest may see them |
+| `POST` | `/api/attendee/vote` | Check-in code | `{ code, pollId, optionId }` → `voted`, or an error saying why not |
+
+Attendee routes use `POST` so the check-in code (the attendee's only credential) stays out of URLs and server logs. Unknown codes get a short delay to slow down guessing.
 
 ### Rules the app enforces
 
-- **Only checked-in guests can vote.**
+- **Only checked-in guests can vote.** Others see the polls with voting locked; it unlocks on its own once an usher checks them in.
+- **Results appear only after voting** (or when a poll closes), so live numbers don't sway undecided voters. Polls with `show_results` off never send counts to the browser at all, so they can't be read from developer tools either.
 - **One vote per guest per poll.** This is enforced by a `UNIQUE (poll_id, guest_id)` constraint in the database, so it holds even if two requests arrive at the same moment.
 - **A guest can only be checked in once.** The update only applies when `checked_in_at` is empty, so two ushers tapping at once can't double-count; the second sees "already checked in" with the original time.
 - **Check-in codes are unique** (`UNIQUE` on `guests.checkin_code`) and matched case-insensitively.
@@ -108,12 +113,13 @@ scripts/
   seed.ts              Resets and seeds the database
 src/
   app/                 Routes (App Router) — one folder per page
-    api/               Route handlers (staff login/logout, usher guests/check-in)
+    api/               Route handlers (staff login/logout, usher guests/check-in, attendee polls/vote)
   components/
     layout/            Site header and page header
     ui/                Reusable UI: Button, Card, Input, Badge, StatCard, ProgressBar, …
   data/                Event details, seed guests and seed polls
   lib/
+    attendee.ts        Builds the poll list each attendee is allowed to see
     auth/              Staff PIN tokens and the requireStaff() check
     db/client.ts       Shared database connection (local file or Turso)
     db/schema.ts       Table definitions
@@ -138,8 +144,8 @@ src/
 | --- | --- | --- |
 | 1–3 | Project setup, design tokens, UI kit, page shells, database schema, queries, seed data | ✅ Done |
 | 4 | Usher check-in dashboard and staff PIN protection | ✅ Done |
-| 5 | Attendee voting | ⏳ Next |
-| 6 | Organizer live dashboard (polling every ~5 seconds) | Planned |
+| 5 | Attendee voting | ✅ Done |
+| 6 | Organizer live dashboard (polling every ~5 seconds) | ⏳ Next |
 | 7 | Gemini AI assistant | Planned |
 | 8–10 | Polish, testing and Vercel deployment | Planned |
 

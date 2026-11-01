@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, EmptyState } from "@/components/ui";
+import { AttendeeVoting } from "./AttendeeVoting";
 
 export const metadata: Metadata = { title: "Live polls" };
 
 export default function AttendeePage() {
   return (
-    <>
-      <PageHeader title="Live polls" description="Enter your check-in code to vote." />
-      <Card>
-        <EmptyState title="Coming in Stage 5" message="This screen is being built next." />
-      </Card>
-    </>
+    <div className="mx-auto w-full max-w-2xl">
+      <PageHeader title="Live polls" description="Enter your check-in code to vote and see results." />
+      <AttendeeVoting />
+    </div>
   );
 }
