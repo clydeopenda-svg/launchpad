@@ -88,6 +88,7 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 
 | Method | Route | Access | Purpose |
 | --- | --- | --- | --- |
+| `GET` | `/api/health` | Public | `200` if the database is reachable, `503` if not, plus whether the Gemini key, staff PIN and Turso URL are set (never their values) |
 | `POST` | `/api/staff/login` | Public, rate-limited | `{ pin }` → sets the staff cookie |
 | `POST` | `/api/staff/logout` | Public | Clears the staff cookie |
 | `GET` | `/api/usher/guests?q=` | Staff | Matching guests (up to 50) plus attendance stats |
@@ -174,6 +175,7 @@ The app is designed for [Vercel](https://vercel.com). Vercel's filesystem is not
 1. Create a Turso database and copy its URL and auth token.
 2. Seed it from your machine: put `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env.local` and run `npm run db:seed`.
 3. Import the repository into Vercel and add all variables from the table above in the project settings.
+4. After deploying, open `/api/health` on the live site: `"database": "ok"` and `"hostedDatabase": true` confirm it is talking to Turso.
 
 ## Notes
 
