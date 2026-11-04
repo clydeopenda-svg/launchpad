@@ -59,6 +59,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Type-check with `tsc --noEmit` |
+| `npm test` | Run the unit tests (Node's built-in test runner via `tsx`, no extra dependencies) |
 | `npm run db:seed` | **Reset** the database: 200 guests and 4 sample polls, nobody checked in |
 | `npm run db:seed:demo` | Same, plus check-ins and votes so the dashboards have data to show |
 
@@ -146,6 +147,7 @@ src/
     utils.ts           Small helpers (class names, percentages, time formatting)
   types/               Shared TypeScript types
   proxy.ts             Protects staff pages and APIs (Next.js 16's replacement for middleware)
+tests/                 Unit tests: poll result visibility, staff PIN tokens, safe redirects, rate limiting
 ```
 
 ### Database
