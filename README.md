@@ -82,13 +82,13 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 - `src/proxy.ts` redirects `/usher` and `/organizer` to `/staff/login` without a valid cookie, and returns `401` for `/api/usher/*` and `/api/organizer/*`.
 - The staff API routes check the cookie again themselves, so they stay protected even if the proxy matcher changes.
 - Changing `STAFF_PIN` logs out every staff device.
-- Wrong PINs get a short delay to slow down guessing. There's no lockout, so use a PIN of at least 6 digits.
+- Wrong PINs get a short delay, and each visitor gets 10 login attempts per 5 minutes (then `429 Too Many Requests`). Like the assistant's limit this is held in memory per server instance, so still use a PIN of at least 6 digits.
 
 ### API routes
 
 | Method | Route | Access | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/api/staff/login` | Public | `{ pin }` → sets the staff cookie |
+| `POST` | `/api/staff/login` | Public, rate-limited | `{ pin }` → sets the staff cookie |
 | `POST` | `/api/staff/logout` | Public | Clears the staff cookie |
 | `GET` | `/api/usher/guests?q=` | Staff | Matching guests (up to 50) plus attendance stats |
 | `POST` | `/api/usher/checkin` | Staff | `{ guestId }` → `checked_in` or `already_checked_in` |
