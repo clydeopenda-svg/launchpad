@@ -118,6 +118,7 @@ Attendee routes use `POST` so the check-in code (the attendee's only credential)
 - **A guest can only be checked in once.** The update only applies when `checked_in_at` is empty, so two ushers tapping at once can't double-count; the second sees "already checked in" with the original time.
 - **Check-in codes are unique** (`UNIQUE` on `guests.checkin_code`) and matched case-insensitively.
 - All SQL uses `?` placeholders, never string concatenation, to prevent SQL injection.
+- Every response carries baseline security headers (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`) set in `next.config.ts`, and the `X-Powered-By` header is turned off.
 
 ## Project structure
 
