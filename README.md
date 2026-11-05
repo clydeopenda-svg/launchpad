@@ -147,7 +147,7 @@ src/
     utils.ts           Small helpers (class names, percentages, time formatting)
   types/               Shared TypeScript types
   proxy.ts             Protects staff pages and APIs (Next.js 16's replacement for middleware)
-tests/                 Unit tests: poll result visibility, staff PIN tokens, safe redirects, rate limiting
+tests/                 Unit tests: poll result visibility, staff PIN tokens, safe redirects, rate limiting, Gemini client (mocked fetch)
 ```
 
 ### Database
