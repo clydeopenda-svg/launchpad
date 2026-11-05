@@ -78,7 +78,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 
 ### Staff access
 
-Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** containing an HMAC token derived from the PIN, never the PIN itself, valid for 16 hours.
+Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** containing an HMAC token derived from the PIN, never the PIN itself. The token carries a signed expiry, so the server stops accepting it after 16 hours even if the cookie is copied to another device.
 
 - `src/proxy.ts` redirects `/usher` and `/organizer` to `/staff/login` without a valid cookie, and returns `401` for `/api/usher/*` and `/api/organizer/*`.
 - The staff API routes check the cookie again themselves, so they stay protected even if the proxy matcher changes.

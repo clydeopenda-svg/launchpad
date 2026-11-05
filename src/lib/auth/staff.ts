@@ -1,11 +1,13 @@
 // Staff (usher/organizer) access control.
 //
 // Staff share one PIN (env STAFF_PIN). After a correct PIN we store a session
-// token in an httpOnly cookie. The token is an HMAC of a fixed message keyed
-// by the PIN, so:
+// token in an httpOnly cookie. The token is "<expiry>.<signature>", where the
+// signature is an HMAC of the expiry time keyed by the PIN, so:
 //  - the PIN itself is never stored in the browser;
 //  - the token can be checked without a database or session store;
-//  - changing STAFF_PIN instantly logs every staff device out.
+//  - changing STAFF_PIN instantly logs every staff device out;
+//  - a copied cookie stops working after STAFF_SESSION_SECONDS, even though
+//    the browser would otherwise be the only thing enforcing the cookie's age.
 //
 // Uses the Web Crypto API so the same code runs in proxy.ts and route handlers.
 
@@ -14,7 +16,7 @@ export const STAFF_COOKIE = "launchpad_staff";
 /** How long a staff login lasts: long enough to cover a full event day. */
 export const STAFF_SESSION_SECONDS = 60 * 60 * 16;
 
-const SESSION_MESSAGE = "launchpad-staff-session-v1";
+const SESSION_MESSAGE = "launchpad-staff-session-v2";
 
 function getPin(): string | null {
   const pin = process.env.STAFF_PIN?.trim();
@@ -53,11 +55,16 @@ export async function createStaffToken(pin: string): Promise<string | null> {
   // Compare HMACs rather than the raw strings so both sides have equal length.
   const [given, actual] = await Promise.all([hmac(SESSION_MESSAGE, pin.trim()), hmac(SESSION_MESSAGE, expected)]);
   if (!safeEqual(given, actual)) return null;
-  return hmac(expected, SESSION_MESSAGE);
+  const expiresAt = Math.floor(Date.now() / 1000) + STAFF_SESSION_SECONDS;
+  return `${expiresAt}.${await hmac(expected, `${SESSION_MESSAGE}:${expiresAt}`)}`;
 }
 
 export async function isValidStaffToken(token: string | undefined): Promise<boolean> {
   const pin = getPin();
   if (!pin || !token) return false;
-  return safeEqual(token, await hmac(pin, SESSION_MESSAGE));
+  const [expiry, signature] = token.split(".");
+  const expiresAt = Number(expiry);
+  if (!signature || !Number.isInteger(expiresAt) || expiresAt <= Date.now() / 1000) return false;
+  // The expiry is covered by the signature, so it can't be pushed back by editing the cookie.
+  return safeEqual(signature, await hmac(pin, `${SESSION_MESSAGE}:${expiresAt}`));
 }

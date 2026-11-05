@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
-import { createStaffToken, isValidStaffToken } from "@/lib/auth/staff";
+import { STAFF_SESSION_SECONDS, createStaffToken, isValidStaffToken } from "@/lib/auth/staff";
 import { safeNextPath } from "@/lib/auth/safeNextPath";
 
 beforeEach(() => {
@@ -27,6 +27,21 @@ test("changing STAFF_PIN invalidates existing tokens", async () => {
   const token = await createStaffToken("135790");
   process.env.STAFF_PIN = "246801";
   assert.equal(await isValidStaffToken(token ?? undefined), false);
+});
+
+test("tokens expire after the session length", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  const token = await createStaffToken("135790");
+  t.mock.timers.tick((STAFF_SESSION_SECONDS - 60) * 1000);
+  assert.equal(await isValidStaffToken(token ?? undefined), true);
+  t.mock.timers.tick(120 * 1000);
+  assert.equal(await isValidStaffToken(token ?? undefined), false);
+});
+
+test("rejects a token whose expiry was edited", async () => {
+  const token = (await createStaffToken("135790")) ?? "";
+  const [expiry, signature] = token.split(".");
+  assert.equal(await isValidStaffToken(`${Number(expiry) + 3600}.${signature}`), false);
 });
 
 test("fails closed when no PIN is configured", async () => {
