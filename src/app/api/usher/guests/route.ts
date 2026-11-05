@@ -12,12 +12,8 @@ export async function GET(request: NextRequest) {
 
   const query = request.nextUrl.searchParams.get("q") ?? "";
   try {
-    const [guests, stats] = await Promise.all([searchGuests(query), getAttendanceStats()]);
-    return Response.json({
-      guests: guests.slice(0, MAX_RESULTS),
-      totalMatches: guests.length,
-      stats,
-    });
+    const [{ guests, total }, stats] = await Promise.all([searchGuests(query, MAX_RESULTS), getAttendanceStats()]);
+    return Response.json({ guests, totalMatches: total, stats });
   } catch (error) {
     console.error("Guest search failed:", error);
     return Response.json({ error: "Couldn't load guests. Please try again." }, { status: 500 });

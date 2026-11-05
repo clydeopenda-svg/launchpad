@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
+import { likePattern } from "@/lib/db/queries";
 import { cn, percent } from "@/lib/utils";
 
 test("percent rounds to one decimal and handles zero totals", () => {
@@ -28,4 +29,9 @@ test("clientIp takes the first x-forwarded-for entry", () => {
   const request = new Request("http://localhost", { headers: { "x-forwarded-for": "203.0.113.5, 10.0.0.1" } });
   assert.equal(clientIp(request), "203.0.113.5");
   assert.equal(clientIp(new Request("http://localhost")), "unknown");
+});
+
+test("likePattern escapes LIKE wildcards in search input", () => {
+  assert.equal(likePattern(" Ada "), "%Ada%");
+  assert.equal(likePattern("50%_off\\"), "%50\\%\\_off\\\\%");
 });

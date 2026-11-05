@@ -25,16 +25,32 @@ export function normalizeCode(code: string): string {
 
 // ---------- Guests & check-in ----------
 
-/** Search by name, organization or check-in code. Empty search returns everyone. */
-export async function searchGuests(search = ""): Promise<Guest[]> {
-  const term = `%${search.trim()}%`;
-  const result = await getDb().execute({
-    sql: `SELECT * FROM guests
-          WHERE full_name LIKE ? OR organization LIKE ? OR checkin_code LIKE ?
-          ORDER BY full_name`,
-    args: [term, term, term],
-  });
-  return result.rows.map(toGuest);
+/**
+ * Turns user input into a LIKE "contains" pattern. % and _ are LIKE
+ * wildcards, so they are escaped (paired with ESCAPE '\' in the SQL):
+ * otherwise searching for "_" would match every guest.
+ */
+export function likePattern(search: string): string {
+  return `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+/**
+ * Search by name, organization or check-in code. Empty search returns everyone.
+ * Only the first `limit` rows are fetched; `total` is the full match count, so
+ * the usher screen can say "showing 50 of 200" without loading every guest.
+ */
+export async function searchGuests(search = "", limit = 50): Promise<{ guests: Guest[]; total: number }> {
+  const term = likePattern(search);
+  const where = `full_name LIKE ? ESCAPE '\\' OR organization LIKE ? ESCAPE '\\' OR checkin_code LIKE ? ESCAPE '\\'`;
+  const db = getDb();
+  const [rows, count] = await Promise.all([
+    db.execute({
+      sql: `SELECT * FROM guests WHERE ${where} ORDER BY full_name LIMIT ?`,
+      args: [term, term, term, limit],
+    }),
+    db.execute({ sql: `SELECT COUNT(*) AS total FROM guests WHERE ${where}`, args: [term, term, term] }),
+  ]);
+  return { guests: rows.rows.map(toGuest), total: Number(count.rows[0].total) };
 }
 
 export async function getGuestById(id: number): Promise<Guest | null> {
