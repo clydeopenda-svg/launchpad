@@ -1,7 +1,10 @@
 {
-  "name": "simba",
+  "name": "launchpad",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.12"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

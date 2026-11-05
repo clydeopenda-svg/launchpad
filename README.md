@@ -65,6 +65,8 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 
 > ⚠️ Both seed commands delete all existing guests, check-ins and votes.
 
+GitHub Actions (`.github/workflows/ci.yml`) runs `typecheck`, `lint`, `test` and `build` on every push to `main` and on every pull request. No secrets are needed.
+
 ## Features
 
 | Page | Route | Who | What it does |
