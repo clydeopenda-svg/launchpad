@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clientIp, rateLimit } from "@/lib/rateLimit";
+import { clientIp, isRateLimited, rateLimit } from "@/lib/rateLimit";
 import { likePattern } from "@/lib/db/queries";
 import { cn, percent } from "@/lib/utils";
 
@@ -34,4 +34,13 @@ test("clientIp takes the first x-forwarded-for entry", () => {
 test("likePattern escapes LIKE wildcards in search input", () => {
   assert.equal(likePattern(" Ada "), "%Ada%");
   assert.equal(likePattern("50%_off\\"), "%50\\%\\_off\\\\%");
+});
+
+test("isRateLimited reports a used-up key without counting an attempt", () => {
+  const key = "peek-key";
+  assert.equal(isRateLimited(key, 2), false);
+  rateLimit(key, 2, 60_000);
+  assert.equal(isRateLimited(key, 2), false);
+  rateLimit(key, 2, 60_000);
+  assert.equal(isRateLimited(key, 2), true);
 });

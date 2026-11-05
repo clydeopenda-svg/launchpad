@@ -1,4 +1,4 @@
-import { getPollsForGuest, publicGuest, readCode, slowDown } from "@/lib/attendee";
+import { getPollsForGuest, publicGuest, readCode, recordFailedCode, tooManyFailedCodes } from "@/lib/attendee";
 import { getGuestByCode } from "@/lib/db/queries";
 
 /**
@@ -8,6 +8,9 @@ import { getGuestByCode } from "@/lib/db/queries";
  * travels in the request body and doesn't end up in URLs, logs or history.
  */
 export async function POST(request: Request) {
+  const blocked = tooManyFailedCodes(request);
+  if (blocked) return blocked;
+
   const code = readCode(await request.json().catch(() => null));
   if (!code.trim()) {
     return Response.json({ error: "Enter your check-in code." }, { status: 400 });
@@ -16,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const guest = await getGuestByCode(code);
     if (!guest) {
-      await slowDown();
+      await recordFailedCode(request);
       return Response.json({ error: "We couldn't find that check-in code." }, { status: 404 });
     }
     return Response.json({ guest: publicGuest(guest), polls: await getPollsForGuest(guest) });

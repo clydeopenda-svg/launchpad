@@ -26,6 +26,12 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   return true;
 }
 
+/** True if `key` has already used up its `limit` this window. Unlike rateLimit(), this doesn't count as an attempt. */
+export function isRateLimited(key: string, limit: number): boolean {
+  const current = windows.get(key);
+  return current !== undefined && current.resetAt > Date.now() && current.count >= limit;
+}
+
 /** Best-guess client IP. Behind Vercel's proxy the first x-forwarded-for entry is the visitor. */
 export function clientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";

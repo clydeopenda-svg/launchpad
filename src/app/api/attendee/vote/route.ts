@@ -1,4 +1,4 @@
-import { readCode, slowDown } from "@/lib/attendee";
+import { readCode, recordFailedCode, tooManyFailedCodes } from "@/lib/attendee";
 import { castVote, type VoteResult } from "@/lib/db/queries";
 
 // castVote does all the checks (guest exists, checked in, poll open, option
@@ -15,6 +15,9 @@ const outcomes: Record<VoteResult["status"], { status: number; message: string }
 
 /** POST /api/attendee/vote  { code, pollId, optionId } */
 export async function POST(request: Request) {
+  const blocked = tooManyFailedCodes(request);
+  if (blocked) return blocked;
+
   const body = await request.json().catch(() => null);
   const code = readCode(body);
   const pollId = Number(body?.pollId);
@@ -25,7 +28,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await castVote(code, pollId, optionId);
-    if (result.status === "guest_not_found") await slowDown();
+    if (result.status === "guest_not_found") await recordFailedCode(request);
     const { status, message } = outcomes[result.status];
     return status === 200
       ? Response.json({ result: result.status, message })

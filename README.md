@@ -97,10 +97,10 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 | `GET` | `/api/organizer/overview` | Staff | Attendance, voter count, all poll results and the 10 latest check-ins |
 | `PATCH` | `/api/organizer/polls/:id` | Staff | `{ status?, showResults? }` → open/close a poll or show/hide its results |
 | `POST` | `/api/assistant` | Public, rate-limited | `{ messages }` → `{ reply }` from Gemini |
-| `POST` | `/api/attendee/polls` | Check-in code | `{ code }` → first name, check-in status and polls as that guest may see them |
-| `POST` | `/api/attendee/vote` | Check-in code | `{ code, pollId, optionId }` → `voted`, or an error saying why not |
+| `POST` | `/api/attendee/polls` | Check-in code, rate-limited | `{ code }` → first name, check-in status and polls as that guest may see them |
+| `POST` | `/api/attendee/vote` | Check-in code, rate-limited | `{ code, pollId, optionId }` → `voted`, or an error saying why not |
 
-Attendee routes use `POST` so the check-in code (the attendee's only credential) stays out of URLs and server logs. Unknown codes get a short delay to slow down guessing.
+Attendee routes use `POST` so the check-in code (the attendee's only credential) stays out of URLs and server logs. Unknown codes get a short delay, and after 30 unknown codes in 5 minutes a visitor gets `429 Too Many Requests` until the window resets, so codes can't be found by brute force. Valid codes never count towards this, so the 5-second refresh is unaffected.
 
 ### AI assistant
 
