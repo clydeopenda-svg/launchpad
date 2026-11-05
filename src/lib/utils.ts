@@ -12,3 +12,20 @@ export function percent(part: number, total: number): number {
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
+
+/**
+ * Builds a CSV file (RFC 4180) from rows of cells. Every cell is quoted, so
+ * commas, quotes and line breaks in names are safe. Cells starting with
+ * =, +, -, @ or a tab get a leading apostrophe so a spreadsheet shows them as
+ * text instead of running them as a formula (CSV injection), since guest
+ * names and organizations come from outside the app.
+ */
+export function toCsv(rows: Array<Array<string | number | null>>): string {
+  const cell = (value: string | number | null) => {
+    let text = value === null ? "" : String(value);
+    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+  // CRLF line endings, as the CSV spec and Excel expect.
+  return rows.map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";
+}

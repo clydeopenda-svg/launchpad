@@ -53,6 +53,12 @@ export async function searchGuests(search = "", limit = 50): Promise<{ guests: G
   return { guests: rows.rows.map(toGuest), total: Number(count.rows[0].total) };
 }
 
+/** Every guest, by name. For the organizer's CSV export. */
+export async function getAllGuests(): Promise<Guest[]> {
+  const result = await getDb().execute("SELECT * FROM guests ORDER BY full_name");
+  return result.rows.map(toGuest);
+}
+
 export async function getGuestById(id: number): Promise<Guest | null> {
   const result = await getDb().execute({ sql: "SELECT * FROM guests WHERE id = ?", args: [id] });
   return result.rows[0] ? toGuest(result.rows[0]) : null;

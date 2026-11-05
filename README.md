@@ -73,7 +73,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | Staff login | `/staff/login` | Staff | Enter the staff PIN |
 | Usher check-in | `/usher` | Staff | Live attendance numbers; search guests by name, organization or check-in code and check them in with one tap. Refreshes every 5 seconds so several ushers stay in sync |
 | Live polls | `/attendee` | Attendees | Enter a check-in code (remembered on the device) to vote. Results appear after voting and update every 5 seconds |
-| Organizer dashboard | `/organizer` | Staff | Live attendance, voter participation, full results for every poll (including hidden ones) and the latest arrivals, refreshed every 5 seconds. Each poll can be opened/closed and its results shown to or hidden from attendees |
+| Organizer dashboard | `/organizer` | Staff | Live attendance, voter participation, full results for every poll (including hidden ones) and the latest arrivals, refreshed every 5 seconds. Each poll can be opened/closed and its results shown to or hidden from attendees. **Export guests (CSV)** downloads the full guest list with check-in times |
 | AI assistant | `/assistant` | Everyone | Chat with a Gemini-powered assistant about the agenda, venue, food, Wi-Fi and live poll results. Suggested questions to start; Enter to send |
 
 ### Staff access
@@ -95,6 +95,7 @@ Staff share one PIN (`STAFF_PIN`). A correct PIN sets an **httpOnly cookie** con
 | `GET` | `/api/usher/guests?q=` | Staff | Matching guests (up to 50) plus attendance stats |
 | `POST` | `/api/usher/checkin` | Staff | `{ guestId }` → `checked_in` or `already_checked_in` |
 | `GET` | `/api/organizer/overview` | Staff | Attendance, voter count, all poll results and the 10 latest check-ins |
+| `GET` | `/api/organizer/export` | Staff | CSV download of every guest with check-in status and time (no check-in codes) |
 | `PATCH` | `/api/organizer/polls/:id` | Staff | `{ status?, showResults? }` → open/close a poll or show/hide its results |
 | `POST` | `/api/assistant` | Public, rate-limited | `{ messages }` → `{ reply }` from Gemini |
 | `POST` | `/api/attendee/polls` | Check-in code, rate-limited | `{ code }` → first name, check-in status and polls as that guest may see them |

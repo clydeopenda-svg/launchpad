@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { clientIp, isRateLimited, rateLimit } from "@/lib/rateLimit";
 import { likePattern } from "@/lib/db/queries";
-import { cn, percent } from "@/lib/utils";
+import { cn, percent, toCsv } from "@/lib/utils";
 
 test("percent rounds to one decimal and handles zero totals", () => {
   assert.equal(percent(1, 3), 33.3);
@@ -43,4 +43,15 @@ test("isRateLimited reports a used-up key without counting an attempt", () => {
   assert.equal(isRateLimited(key, 2), false);
   rateLimit(key, 2, 60_000);
   assert.equal(isRateLimited(key, 2), true);
+});
+
+test("toCsv quotes every cell and neutralises spreadsheet formulas", () => {
+  assert.equal(
+    toCsv([
+      ["Name", "Note"],
+      ['Ada "The Countess"', "a, b\nc"],
+      ["=HYPERLINK(1)", null],
+    ]),
+    '"Name","Note"\r\n"Ada ""The Countess""","a, b\nc"\r\n"\'=HYPERLINK(1)",""\r\n',
+  );
 });
