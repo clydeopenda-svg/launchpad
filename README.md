@@ -58,7 +58,7 @@ Copy `.env.example` to `.env.local`. `.env.local` is git-ignored — never commi
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint |
-| `npm run typecheck` | Type-check with `tsc --noEmit` |
+| `npm run typecheck` | Generate Next.js route types with `next typegen`, then type-check with `tsc --noEmit` (the `LayoutProps` and `RouteContext` helpers don't exist on a fresh checkout until generated) |
 | `npm test` | Run the unit tests (Node's built-in test runner via `tsx`, no extra dependencies) |
 | `npm run db:seed` | **Reset** the database: 200 guests and 4 sample polls, nobody checked in |
 | `npm run db:seed:demo` | Same, plus check-ins and votes so the dashboards have data to show |

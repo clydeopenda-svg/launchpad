@@ -12,7 +12,7 @@
     "lint": "eslint",
     "db:seed": "tsx scripts/seed.ts",
     "db:seed:demo": "tsx scripts/seed.ts --demo",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
