@@ -57,3 +57,14 @@ test("safeNextPath only allows same-site paths", () => {
   assert.equal(safeNextPath("https://evil.com"), "/usher");
   assert.equal(safeNextPath(null, "/organizer"), "/organizer");
 });
+
+test("safeNextPath rejects paths a browser would resolve to another site", () => {
+  // Browsers delete tabs and line breaks from URLs, turning each of these into "//evil.com".
+  for (const next of ["/\t/evil.com", "/\n/evil.com", "/\r/evil.com", "/\t\\evil.com"]) {
+    assert.equal(safeNextPath(next), "/usher", JSON.stringify(next));
+  }
+  // Only a dot segment: this stays on the site, so it must come back untouched
+  // rather than normalised to "//evil.com", which would leave it.
+  assert.equal(safeNextPath("/.//evil.com"), "/.//evil.com");
+  assert.equal(new URL("/.//evil.com", "https://launchpad.example").host, "launchpad.example");
+});
