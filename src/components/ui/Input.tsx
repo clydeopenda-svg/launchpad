@@ -32,8 +32,13 @@ export function Input({ label, hideLabel, hint, error, className, id, ...props }
         )}
         {...props}
       />
+      {/* Errors only appear after a submit (wrong staff PIN, unknown check-in
+          code), while focus is still on the submit button. role="alert" makes
+          screen readers announce the message instead of leaving the user
+          unaware that anything went wrong. The forms clear the error before
+          each submit, so a repeated failure re-mounts it and is announced again. */}
       {error ? (
-        <p id={`${inputId}-error`} className="text-sm text-danger">{error}</p>
+        <p id={`${inputId}-error`} role="alert" className="text-sm text-danger">{error}</p>
       ) : hint ? (
         <p id={`${inputId}-hint`} className="text-sm text-muted">{hint}</p>
       ) : null}
