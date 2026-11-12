@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { STAFF_COOKIE, STAFF_SESSION_SECONDS, createStaffToken, isStaffPinConfigured } from "@/lib/auth/staff";
-import { clientIp, rateLimit } from "@/lib/rateLimit";
+import { clientIp, rateLimit, retryAfterSeconds } from "@/lib/rateLimit";
 
 // Login attempts allowed per visitor per window. Generous enough for staff who
 // mistype a few times, but caps guessing at ~120 PINs an hour per IP — with a
@@ -14,10 +14,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "Staff PIN is not configured on the server." }, { status: 503 });
   }
 
-  if (!rateLimit(`staff-login:${clientIp(request)}`, LOGIN_LIMIT, LOGIN_WINDOW_MS)) {
+  const limitKey = `staff-login:${clientIp(request)}`;
+  if (!rateLimit(limitKey, LOGIN_LIMIT, LOGIN_WINDOW_MS)) {
     return Response.json(
       { error: "Too many attempts. Please wait a few minutes and try again." },
-      { status: 429, headers: { "Retry-After": String(LOGIN_WINDOW_MS / 1000) } },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitKey)) } },
     );
   }
 

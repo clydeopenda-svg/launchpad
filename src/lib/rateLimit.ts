@@ -32,6 +32,19 @@ export function isRateLimited(key: string, limit: number): boolean {
   return current !== undefined && current.resetAt > Date.now() && current.count >= limit;
 }
 
+/**
+ * Whole seconds until `key`'s current window resets, for a 429's Retry-After
+ * header. Uses the real time left rather than the full window length, so a
+ * visitor blocked near the end of a window isn't told to wait the whole
+ * window again. Rounded up and at least 1, because Retry-After: 0 would invite
+ * an immediate retry that is still inside the window.
+ */
+export function retryAfterSeconds(key: string): number {
+  const current = windows.get(key);
+  const remainingMs = current ? current.resetAt - Date.now() : 0;
+  return Math.max(1, Math.ceil(remainingMs / 1000));
+}
+
 /** Best-guess client IP. Behind Vercel's proxy the first x-forwarded-for entry is the visitor. */
 export function clientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";

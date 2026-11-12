@@ -1,5 +1,5 @@
 import { getPolls, getVotesForGuest } from "@/lib/db/queries";
-import { clientIp, isRateLimited, rateLimit } from "@/lib/rateLimit";
+import { clientIp, isRateLimited, rateLimit, retryAfterSeconds } from "@/lib/rateLimit";
 import type { AttendeePoll, Guest, Poll } from "@/types";
 
 // Shared by the attendee API routes: looks up a guest by check-in code and
@@ -23,10 +23,11 @@ function failedCodeKey(request: Request) {
 
 /** A 429 response if this visitor has tried too many unknown codes, otherwise null. Check before looking a code up. */
 export function tooManyFailedCodes(request: Request): Response | null {
-  if (!isRateLimited(failedCodeKey(request), FAILED_CODE_LIMIT)) return null;
+  const key = failedCodeKey(request);
+  if (!isRateLimited(key, FAILED_CODE_LIMIT)) return null;
   return Response.json(
     { error: "Too many incorrect codes. Please wait a few minutes, or ask at the check-in desk." },
-    { status: 429, headers: { "Retry-After": String(FAILED_CODE_WINDOW_MS / 1000) } },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds(key)) } },
   );
 }
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clientIp, isRateLimited, rateLimit } from "@/lib/rateLimit";
+import { clientIp, isRateLimited, rateLimit, retryAfterSeconds } from "@/lib/rateLimit";
 import { likePattern } from "@/lib/db/queries";
 import { cn, percent, toCsv } from "@/lib/utils";
 
@@ -43,6 +43,20 @@ test("isRateLimited reports a used-up key without counting an attempt", () => {
   assert.equal(isRateLimited(key, 2), false);
   rateLimit(key, 2, 60_000);
   assert.equal(isRateLimited(key, 2), true);
+});
+
+test("retryAfterSeconds reports the time left in the window, rounded up and at least 1", (t) => {
+  t.mock.timers.enable({ apis: ["Date"] });
+  const key = "retry-key";
+  rateLimit(key, 1, 300_000);
+  assert.equal(retryAfterSeconds(key), 300);
+
+  t.mock.timers.tick(299_500);
+  assert.equal(retryAfterSeconds(key), 1, "half a second left rounds up to 1");
+
+  t.mock.timers.tick(10_000);
+  assert.equal(retryAfterSeconds(key), 1, "an expired window never yields 0");
+  assert.equal(retryAfterSeconds("unknown-key"), 1);
 });
 
 test("toCsv quotes every cell and neutralises spreadsheet formulas", () => {

@@ -1,7 +1,7 @@
 import { buildAssistantPrompt } from "@/lib/assistantPrompt";
 import { getAttendanceStats, getPolls } from "@/lib/db/queries";
 import { GeminiError, generateReply, type GeminiErrorKind } from "@/lib/gemini";
-import { clientIp, rateLimit } from "@/lib/rateLimit";
+import { clientIp, rateLimit, retryAfterSeconds } from "@/lib/rateLimit";
 import type { ChatMessage } from "@/types";
 
 // This endpoint is public and every call spends Gemini quota, so input is
@@ -28,10 +28,11 @@ function isChatMessage(value: unknown): value is ChatMessage {
 
 /** POST /api/assistant  { messages: ChatMessage[] } → { reply } */
 export async function POST(request: Request) {
-  if (!rateLimit(`assistant:${clientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+  const limitKey = `assistant:${clientIp(request)}`;
+  if (!rateLimit(limitKey, RATE_LIMIT, RATE_WINDOW_MS)) {
     return Response.json(
       { error: "You've asked a lot of questions! Please wait a few minutes and try again." },
-      { status: 429 },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(limitKey)) } },
     );
   }
 

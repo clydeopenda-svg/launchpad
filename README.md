@@ -111,7 +111,7 @@ Attendee routes use `POST` so the check-in code (the attendee's only credential)
 
 - **Grounded:** told to answer only from that information, to stay on topic, and to say when it doesn't know.
 - **Private:** no guest names, emails or codes are sent to Gemini, and polls with hidden results are described as "not yet announced", so the chatbot can't reveal results early.
-- **Cost-limited:** questions are capped at 500 characters, only the last 10 messages are sent, replies are capped in length, and each visitor can ask 20 questions per 5 minutes. The rate limit is held in memory per server instance, so on Vercel it is a best-effort brake rather than a strict limit.
+- **Cost-limited:** questions are capped at 500 characters, only the last 10 messages are sent, replies are capped in length, and each visitor can ask 20 questions per 5 minutes. The rate limit is held in memory per server instance, so on Vercel it is a best-effort brake rather than a strict limit. Every `429` response from LaunchPad carries a `Retry-After` header with the seconds left until that visitor's window resets.
 - **Fails gracefully:** a missing key, invalid key, Gemini rate limit, blocked prompt or timeout each show attendees a short, friendly message; technical details are only logged on the server.
 
 ### Rules the app enforces
