@@ -168,7 +168,14 @@ function PollList({ code, onSignOut }: { code: string; onSignOut: () => void }) 
           Voting opens once you&apos;ve checked in at the door. This page will update by itself.
         </p>
       )}
-      {error && <p className="text-sm text-danger">{error} Showing the last results.</p>}
+      {/*
+        Always rendered (hidden while empty) so screen readers announce a
+        failed background refresh: text added to an existing live region is
+        read out, but a region inserted together with its text often isn't.
+      */}
+      <p role="status" className="text-sm text-danger empty:hidden">
+        {error && `${error} Showing the last results.`}
+      </p>
 
       {polls.length === 0 ? (
         <Card>

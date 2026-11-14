@@ -147,7 +147,16 @@ export function UsherDashboard() {
             <EmptyState title="No guests found" message="Check the spelling, or search by check-in code instead." />
           ) : (
             <>
-              {loadError && <p className="mb-3 text-sm text-danger">{loadError} Showing the last results.</p>}
+              {/*
+                Always rendered (hidden while empty) so the live region already
+                exists when a background refresh fails: screen readers announce
+                text added to an existing region, but often miss a region that
+                is inserted along with its text. Without this, screen reader
+                users wouldn't know the list had stopped updating.
+              */}
+              <p role="status" className="mb-3 text-sm text-danger empty:hidden">
+                {loadError && `${loadError} Showing the last results.`}
+              </p>
               <ul className="divide-y divide-border">
                 {data.guests.map((guest) => (
                   <GuestRow
