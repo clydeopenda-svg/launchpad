@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/auth/requireStaff";
 import { checkInGuest } from "@/lib/db/queries";
+import { readId } from "@/lib/utils";
 
 /**
  * POST /api/usher/checkin  { guestId }
@@ -13,8 +14,8 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   const body = await request.json().catch(() => null);
-  const guestId = Number(body?.guestId);
-  if (!Number.isInteger(guestId) || guestId <= 0) {
+  const guestId = readId(body?.guestId);
+  if (guestId === null) {
     return Response.json({ error: "A valid guestId is required." }, { status: 400 });
   }
 

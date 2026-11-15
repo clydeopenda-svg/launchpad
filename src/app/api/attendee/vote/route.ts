@@ -1,5 +1,6 @@
 import { readCode, recordFailedCode, tooManyFailedCodes } from "@/lib/attendee";
 import { castVote, type VoteResult } from "@/lib/db/queries";
+import { readId } from "@/lib/utils";
 
 // castVote does all the checks (guest exists, checked in, poll open, option
 // belongs to the poll, one vote per poll); this maps each outcome to an HTTP
@@ -20,9 +21,9 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const code = readCode(body);
-  const pollId = Number(body?.pollId);
-  const optionId = Number(body?.optionId);
-  if (!code.trim() || !Number.isInteger(pollId) || !Number.isInteger(optionId)) {
+  const pollId = readId(body?.pollId);
+  const optionId = readId(body?.optionId);
+  if (!code.trim() || pollId === null || optionId === null) {
     return Response.json({ error: "code, pollId and optionId are required." }, { status: 400 });
   }
 

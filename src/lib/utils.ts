@@ -29,3 +29,14 @@ export function toCsv(rows: Array<Array<string | number | null>>): string {
   // CRLF line endings, as the CSV spec and Excel expect.
   return rows.map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";
 }
+
+/**
+ * Reads a database id from a parsed JSON body: a positive whole number, or
+ * null for anything else. Deliberately stricter than Number(value), which
+ * turns true into 1 and null, "" or [] into 0 — so a malformed request like
+ * { pollId: true } would otherwise act on record 1 instead of being rejected.
+ * The app's own screens always send ids as JSON numbers.
+ */
+export function readId(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+}
