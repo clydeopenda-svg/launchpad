@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { requireStaff } from "@/lib/auth/requireStaff";
 import { updatePoll } from "@/lib/db/queries";
+import { readIdParam } from "@/lib/utils";
 
 /**
  * PATCH /api/organizer/polls/:id  { status?: "open" | "closed", showResults?: boolean }
@@ -11,13 +12,13 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<"/api/organi
   const denied = await requireStaff();
   if (denied) return denied;
 
-  const id = Number((await ctx.params).id);
+  const id = readIdParam((await ctx.params).id);
   const body = await request.json().catch(() => null);
   const status = body?.status;
   const showResults = body?.showResults;
 
   // Validate strictly: these values go straight into the database.
-  if (!Number.isInteger(id) || id <= 0) {
+  if (id === null) {
     return Response.json({ error: "Invalid poll id." }, { status: 400 });
   }
   if (status !== undefined && status !== "open" && status !== "closed") {

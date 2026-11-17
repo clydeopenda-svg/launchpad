@@ -40,3 +40,16 @@ export function toCsv(rows: Array<Array<string | number | null>>): string {
 export function readId(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
+
+/**
+ * Reads a database id from a URL path segment such as the `7` in
+ * /api/organizer/polls/7: plain decimal digits only, or null. Number() would
+ * accept "0x7", "7e0", "7.0" and " 7" as 7, so several different URLs could
+ * all act on the same record; only the canonical form the app itself
+ * builds is allowed.
+ */
+export function readIdParam(value: string): number | null {
+  if (!/^[1-9]\d*$/.test(value)) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : null;
+}

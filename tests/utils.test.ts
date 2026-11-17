@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { clientIp, isRateLimited, rateLimit, retryAfterSeconds } from "@/lib/rateLimit";
 import { likePattern } from "@/lib/db/queries";
-import { cn, percent, readId, toCsv } from "@/lib/utils";
+import { cn, percent, readId, readIdParam, toCsv } from "@/lib/utils";
 
 test("percent rounds to one decimal and handles zero totals", () => {
   assert.equal(percent(1, 3), 33.3);
@@ -75,5 +75,14 @@ test("readId accepts positive whole numbers and rejects values Number() would co
   // Number() would turn each of these into a usable-looking id (1, 0 or 5).
   for (const value of [true, false, null, "", "5", [5], 0, -3, 1.5, Number.NaN, Infinity, 2 ** 53, undefined]) {
     assert.equal(readId(value), null, `${JSON.stringify(value)} should be rejected`);
+  }
+});
+
+test("readIdParam accepts plain decimal path ids and rejects other spellings Number() would accept", () => {
+  assert.equal(readIdParam("7"), 7);
+  assert.equal(readIdParam("120"), 120);
+  // Number() turns each of these into 7, 0, NaN or an unsafe integer.
+  for (const value of ["", "0", "-7", "07", "7.0", "7e0", "0x7", " 7", "7 ", "+7", "abc", "Infinity", "9007199254740993"]) {
+    assert.equal(readIdParam(value), null, `${JSON.stringify(value)} should be rejected`);
   }
 });
