@@ -7,6 +7,9 @@ import type { ChatMessage } from "@/types";
 
 // Keep in sync with MAX_MESSAGE_CHARS in /api/assistant.
 const MAX_CHARS = 500;
+// The textarea's maxLength silently stops typing (and cuts off pasted text)
+// at the limit, so a counter appears once a question gets close to it.
+const COUNTER_FROM = MAX_CHARS - 100;
 
 const SUGGESTIONS = [
   "What's on the agenda after lunch?",
@@ -21,6 +24,8 @@ export function AssistantChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const endRef = useRef<HTMLDivElement>(null);
+  const remaining = MAX_CHARS - draft.length;
+  const showCounter = draft.length >= COUNTER_FROM;
 
   // Keep the newest message in view as the conversation grows.
   useEffect(() => {
@@ -132,6 +137,7 @@ export function AssistantChat() {
           id="assistant-question"
           rows={2}
           maxLength={MAX_CHARS}
+          aria-describedby={showCounter ? "assistant-question-count" : undefined}
           placeholder="Ask a question…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -142,6 +148,13 @@ export function AssistantChat() {
           Send
         </Button>
       </form>
+      {/* Linked to the textarea with aria-describedby rather than a live
+          region, so screen readers hear it on focus instead of on every keystroke. */}
+      {showCounter && (
+        <p id="assistant-question-count" className={cn("-mt-2 text-xs", remaining === 0 ? "text-danger" : "text-muted")}>
+          {remaining === 0 ? `Questions can be up to ${MAX_CHARS} characters.` : `${remaining} characters left`}
+        </p>
+      )}
       <p className="text-xs text-muted">Answers come from AI using the event information and can occasionally be wrong.</p>
     </Card>
   );
